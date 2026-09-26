@@ -1391,7 +1391,6 @@
         <div>
           <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin: 0;" id="tm-title">Treasury Details</h3>
-            <span class="badge badge-info" id="tm-code">Code: 0201</span>
             <span class="badge badge-success" id="tm-status">Active</span>
           </div>
           <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;" id="tm-period-subtitle">
@@ -1567,7 +1566,7 @@
       {
         id: "ujjain",
         name: "Ujjain Treasury",
-        code: "0201",
+        code: "430",
         district: "Ujjain",
         period: "01/2021 to 12/2025 (5-Year Screened)",
         periodShort: "01/2021 - 12/2025",
@@ -1586,7 +1585,7 @@
       {
         id: "bhopal",
         name: "Bhopal Treasury",
-        code: "0101",
+        code: "050",
         district: "Bhopal",
         period: "04/2022 to 03/2026 (Fiscal Multi-Year)",
         periodShort: "04/2022 - 03/2026",
@@ -1604,7 +1603,7 @@
       {
         id: "indore",
         name: "Indore Treasury",
-        code: "0301",
+        code: "170",
         district: "Indore",
         period: "04/2022 to 03/2025 (3-Year Audit)",
         periodShort: "04/2022 - 03/2025",
@@ -1622,7 +1621,7 @@
       {
         id: "gwalior",
         name: "Gwalior Treasury",
-        code: "0401",
+        code: "140",
         district: "Gwalior",
         period: "04/2023 to 03/2025 (2-Year Audit)",
         periodShort: "04/2023 - 03/2025",
@@ -1640,7 +1639,7 @@
       {
         id: "jabalpur",
         name: "Jabalpur Treasury",
-        code: "0501",
+        code: "180",
         district: "Jabalpur",
         period: "04/2023 to 03/2025 (2-Year Audit)",
         periodShort: "04/2023 - 03/2025",
@@ -1876,9 +1875,8 @@
           <div class="treasury-card" onclick="openTreasuryModal('${t.id}')" title="Click to view complete audit dossier and check runs for ${escapeHtml(t.name)}">
             <div class="treasury-header">
               <div>
-                <div class="treasury-name" style="display:flex; align-items:center; gap:6px;">
+                <div class="treasury-name">
                   ${escapeHtml(t.name)}
-                  <span class="badge badge-info" style="font-size:0.68rem; padding: 2px 6px;">${t.code}</span>
                 </div>
                 <div style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 3px;">📅 Period: <strong>${escapeHtml(t.periodShort || t.period)}</strong></div>
                 <div style="font-size: 0.72rem; color: var(--emerald); font-weight: 600; margin-top: 2px;">● ${t.status}</div>
@@ -1919,7 +1917,7 @@
       _activeModalTreasury = t;
 
       document.getElementById('tm-title').textContent = t.name;
-      document.getElementById('tm-code').textContent = `IFMIS Code: ${t.code}`;
+      if (document.getElementById('tm-code')) document.getElementById('tm-code').style.display = 'none';
       document.getElementById('tm-status').textContent = t.status;
       document.getElementById('tm-period-subtitle').innerHTML = `📅 Screening Period: <strong>${escapeHtml(t.period)}</strong> (${escapeHtml(t.district)} District)`;
 
