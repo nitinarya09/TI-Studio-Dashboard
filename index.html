@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TI Studio Pro — Real-Time Telemetry & Security Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <!-- Chart.js for data visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- PapaParse for robust client-side CSV parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    :root {
+      --bg-base: #090d16;
+      --bg-surface: #0f172a;
+      --bg-card: #182234;
+      --bg-card-hover: #1e2c44;
+      --border-color: #24344d;
+      --border-highlight: #38bdf8;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --cyan: #06b6d4;
+      --blue: #3b82f6;
+      --green: #10b981;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --purple: #8b5cf6;
+      --pink: #ec4899;
+      --glow-blue: rgba(59, 130, 246, 0.2);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-base); }
+    ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--blue); }
+
+    /* Header */
+    header {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 14px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      box-shadow: 0 0 20px rgba(14, 165, 233, 0.4);
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-subtitle {
+      font-size: 0.76rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #34d399;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.7; }
+      50% { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.7; }
+    }
+
+    /* Controls Header */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .select-dropdown, .btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-family: inherit;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .select-dropdown:hover, .btn:hover {
+      border-color: var(--blue);
+      background: var(--bg-card-hover);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      border: none;
+      color: #ffffff;
+      font-weight: 600;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #0369a1, #1d4ed8);
+      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.5);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #f87171;
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+      border-color: #f87171;
+    }
+
+    /* Main Container */
+    main {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Alert Banner */
+    .alert-banner {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 10px;
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.86rem;
+      color: #fcd34d;
+    }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .kpi-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-highlight);
+    }
+
+    .kpi-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--accent-gradient, linear-gradient(90deg, #38bdf8, #818cf8));
+    }
+
+    .kpi-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .kpi-value {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .kpi-meta {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Charts Grid */
+    .charts-grid-main {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 1024px) {
+      .charts-grid-main { grid-template-columns: 1fr; }
+    }
+
+    .charts-grid-secondary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 260px;
+      width: 100%;
+    }
+
+    /* Tabs */
+    .tab-pills {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
+      overflow-x: auto;
+    }
+
+    .tab-pill {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tab-pill:hover {
+      color: #ffffff;
+      background: var(--bg-card-hover);
+    }
+
+    .tab-pill.active {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #ffffff;
+    }
+
+    /* Table Styles */
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--bg-surface);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+      text-align: left;
+    }
+
+    th {
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      font-weight: 600;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+
+    tr:hover td {
+      background: rgba(59, 130, 246, 0.05);
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+
+    .badge-startup { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+    .badge-audit { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .badge-export { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .badge-error { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      width: 520px;
+      max-width: 90vw;
+      padding: 24px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Inputs */
+    .input-field {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 8px 12px;
+      border-radius: 6px;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 0.85rem;
+      outline: none;
+      margin-top: 6px;
+    }
+
+    .input-field:focus {
+      border-color: var(--blue);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <div>
+        <div class="brand-title">
+          TI Studio Pro
+          <span class="live-badge"><span class="pulse-dot"></span> TELEMETRY LIVE</span>
+        </div>
+        <div class="brand-subtitle">Workstation Security & Audit Usage Analytics Hub</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <!-- Sheet Switcher -->
+      <select id="sheet-select" class="select-dropdown" onchange="handleSheetChange(this.value)">
+        <option value="ti_studio" selected>📊 TI Studio Pro Telemetry</option>
+        <option value="ifmis_365">🏢 IFMIS 365 Telemetry (Archive)</option>
+        <option value="custom">⚙️ Custom Sheet ID...</option>
+      </select>
+
+      <!-- Auto-refresh counter -->
+      <button class="btn" onclick="toggleAutoRefresh()" id="btn-refresh-timer" title="Toggle Auto Refresh">
+        ⏱️ <span id="refresh-countdown">Auto: 30s</span>
+      </button>
+
+      <!-- Manual Refresh -->
+      <button class="btn btn-primary" onclick="loadTelemetryData(true)" id="btn-refresh">
+        🔄 Refresh Now
+      </button>
+
+      <!-- Kill-switch quick link -->
+      <a href="https://gist.github.com/nitinarya09/1c4b00f71aaca63f51f1f6f180c8cb1c" target="_blank" class="btn btn-danger" style="text-decoration:none;" title="Open Administrator GitHub Gist to Ban HWID or Trigger Kill-Switch">
+        🛡️ Remote Kill-Switch (Gist)
+      </a>
+
+      <!-- Settings button -->
+      <button class="btn" onclick="openSettingsModal()" title="Dashboard Settings">
+        ⚙️
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Notice Banner (if sheet requires public view access) -->
+    <div id="sharing-notice" class="alert-banner" style="display: none;">
+      <div>
+        <strong>Notice:</strong> If the Google Sheet is private, telemetry data cannot be fetched directly in the browser. 
+        Ensure your Google Sheet is set to <strong>"Anyone with the link can view"</strong>.
+      </div>
+      <button class="btn btn-sm" onclick="showSharingGuide()" style="padding: 4px 10px; font-size: 0.78rem;">Guide ↗</button>
+    </div>
+
+    <!-- KPI Cards Grid -->
+    <div class="kpi-grid">
+      <div class="kpi-card" style="--accent-gradient: linear-gradient(90deg, #38bdf8, #3b82f6);">
+        <div class="kpi-title">Total Telemetry Events <span>📡</span></div>
+        <div class="kpi-value" id="kpi-total-events">0</div>
+        <div class="kpi-meta"><span id="kpi-events-today">0</span> recorded today</div>
+      </div>
+
+      <div class="kpi-card" style="--accent-gradient: linear-gradient(90deg, #10b981, #059669);">
+        <div class="kpi-title">Active Workstations (HWID) <span>💻</span></div>
+        <div class="kpi-value" id="kpi-total-hwid">0</div>
+        <div class="kpi-meta">Unique machines monitored</div>
+      </div>
+
+      <div class="kpi-card" style="--accent-gradient: linear-gradient(90deg, #8b5cf6, #6366f1);">
+        <div class="kpi-title">Active Operators <span>👤</span></div>
+        <div class="kpi-value" id="kpi-total-operators">0</div>
+        <div class="kpi-meta">Auditors & Analysts</div>
+      </div>
+
+      <div class="kpi-card" style="--accent-gradient: linear-gradient(90deg, #f59e0b, #d97706);">
+        <div class="kpi-title">Audit Check Runs <span>🔍</span></div>
+        <div class="kpi-value" id="kpi-total-audits">0</div>
+        <div class="kpi-meta">High-risk vouchers screened</div>
+      </div>
+
+      <div class="kpi-card" style="--accent-gradient: linear-gradient(90deg, #ec4899, #db2777);">
+        <div class="kpi-title">Dossier / Excel Exports <span>📥</span></div>
+        <div class="kpi-value" id="kpi-total-exports">0</div>
+        <div class="kpi-meta">Reports & spreadsheets</div>
+      </div>
+
+      <div class="kpi-card" style="--accent-gradient: linear-gradient(90deg, #10b981, #14b8a6);">
+        <div class="kpi-title">Security & Kill-Switch <span>🛡️</span></div>
+        <div class="kpi-value" id="kpi-security-status" style="font-size: 1.35rem; color: #34d399;">Active</div>
+        <div class="kpi-meta">HWID authorization enforced</div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tab-pills">
+      <button class="tab-pill active" onclick="switchTab('overview', this)">Overview & Visuals</button>
+      <button class="tab-pill" onclick="switchTab('workstations', this)">💻 Workstations & HWID Control</button>
+      <button class="tab-pill" onclick="switchTab('ledger', this)">📜 Live Event Log Explorer</button>
+    </div>
+
+    <!-- Tab 1: Overview & Visuals -->
+    <section id="tab-overview" style="display: flex; flex-direction: column; gap: 20px;">
+      <div class="charts-grid-main">
+        <!-- Event Timeline -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📈 Telemetry Event Timeline</div>
+            <span style="font-size: 0.78rem; color: var(--text-muted);" id="timeline-range-label">Past 7 days</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-timeline"></canvas>
+          </div>
+        </div>
+
+        <!-- Event Types Doughnut -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🍩 Event Type Breakdown</div>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-event-types"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="charts-grid-secondary">
+        <!-- Workstation Load Chart -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🖥️ Workstation Activity by Hardware ID</div>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-hwid-load"></canvas>
+          </div>
+        </div>
+
+        <!-- Operator Chart -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">👥 Operator Engagement</div>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-operators"></canvas>
+          </div>
+        </div>
+
+        <!-- OS & Environment Chart -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⚙️ Client Environments (OS / Python)</div>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-environment"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 2: Workstations & HWID Control -->
+    <section id="tab-workstations" style="display: none; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">💻 Detected Hardware Workstations</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">
+              All unique computers running TI Studio Pro. Copy any HWID to paste into your GitHub Gist to block access.
+            </div>
+          </div>
+          <a href="https://gist.github.com/nitinarya09/1c4b00f71aaca63f51f1f6f180c8cb1c" target="_blank" class="btn btn-primary btn-sm" style="text-decoration:none;">
+            Edit Blocked List in Gist ↗
+          </a>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Hardware ID (HWID)</th>
+                <th>Last Active Operator</th>
+                <th>IP Address</th>
+                <th>OS & Environment</th>
+                <th>Python Version</th>
+                <th>Total Pings</th>
+                <th>Last Seen Timestamp</th>
+                <th>Security Action</th>
+              </tr>
+            </thead>
+            <tbody id="hwid-table-body">
+              <tr><td colspan="8" style="text-align:center; padding: 40px; color: var(--text-muted);">No workstation records found.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 3: Live Event Log Explorer -->
+    <section id="tab-ledger" style="display: none; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <div class="card-header" style="flex-wrap: wrap; gap: 12px;">
+          <div class="card-title">📜 Live Telemetry Event Logs</div>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="log-search" class="input-field" placeholder="Search operator, HWID, IP, details..." style="width: 260px; margin-top: 0;" oninput="applyLogFilter()" />
+            <select id="log-type-filter" class="select-dropdown" onchange="applyLogFilter()">
+              <option value="ALL">All Event Types</option>
+              <option value="STARTUP">STARTUP</option>
+              <option value="AUDIT_CHECK">AUDIT_CHECK</option>
+              <option value="EXPORT">EXPORT</option>
+            </select>
+            <button class="btn btn-sm" onclick="exportLogsToCSV()" title="Export filtered records to CSV">
+              📥 Export CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Event Type</th>
+                <th>Operator</th>
+                <th>Hardware ID</th>
+                <th>IP Address</th>
+                <th>OS Version</th>
+                <th>Python</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody id="log-table-body">
+              <tr><td colspan="8" style="text-align:center; padding: 40px; color: var(--text-muted);">Loading telemetry events...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px;">
+          <span style="font-size: 0.8rem; color: var(--text-muted);" id="pagination-info">Showing 0 of 0</span>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-sm" id="btn-prev-page" onclick="changePage(-1)">‹ Prev</button>
+            <button class="btn btn-sm" id="btn-next-page" onclick="changePage(1)">Next ›</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settings-modal" onclick="if(event.target===this) closeSettingsModal()">
+    <div class="modal">
+      <h3 style="margin-bottom: 14px; font-size: 1.15rem;">⚙️ Telemetry Dashboard Settings</h3>
+      
+      <div style="margin-bottom: 14px;">
+        <label style="font-size: 0.8rem; color: var(--text-secondary);">Google Sheet ID:</label>
+        <input type="text" id="setting-sheet-id" class="input-field" value="1n3uZ0k86EeGGSehGc0Btd5WTvWR-cIn4wZ6LYSujHcg" />
+      </div>
+
+      <div style="margin-bottom: 14px;">
+        <label style="font-size: 0.8rem; color: var(--text-secondary);">Sheet GID (Tab ID):</label>
+        <input type="text" id="setting-sheet-gid" class="input-field" value="0" />
+      </div>
+
+      <div style="margin-bottom: 18px;">
+        <label style="font-size: 0.8rem; color: var(--text-secondary);">Auto Refresh Rate:</label>
+        <select id="setting-refresh-rate" class="select-dropdown" style="width: 100%; margin-top: 6px;">
+          <option value="15000">Every 15 seconds</option>
+          <option value="30000" selected>Every 30 seconds</option>
+          <option value="60000">Every 60 seconds</option>
+          <option value="0">Disabled (Manual Only)</option>
+        </select>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn" onclick="closeSettingsModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveSettings()">Save & Reload</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ════════════════════════════════════════════════════════════════════════
+       TI Studio Pro — Real-Time Telemetry Dashboard Controller
+       ════════════════════════════════════════════════════════════════════════ */
+
+    const SHEET_CONFIGS = {
+      ti_studio: {
+        id: '1n3uZ0k86EeGGSehGc0Btd5WTvWR-cIn4wZ6LYSujHcg',
+        gid: '0',
+        name: 'TI Studio Pro Telemetry'
+      },
+      ifmis_365: {
+        id: '189e9N3PxqjgPDBOpK-otxLw6_fmhLe9_Fr1JeU9JOCc',
+        gid: '0',
+        name: 'IFMIS 365 Telemetry'
+      }
+    };
+
+    let _currentSheetId = localStorage.getItem('tistudio_sheet_id') || SHEET_CONFIGS.ti_studio.id;
+    let _currentSheetGid = localStorage.getItem('tistudio_sheet_gid') || SHEET_CONFIGS.ti_studio.gid;
+    let _refreshIntervalMs = parseInt(localStorage.getItem('tistudio_refresh_interval') || '30000');
+    let _countdownSec = _refreshIntervalMs / 1000;
+    let _countdownTimer = null;
+    let _telemetryData = [];
+    let _filteredLogs = [];
+    let _currentPage = 1;
+    const _pageSize = 25;
+
+    // Charts instances
+    let _chartTimeline = null;
+    let _chartEventTypes = null;
+    let _chartHwidLoad = null;
+    let _chartOperators = null;
+    let _chartEnvironment = null;
+
+    // Fallback Mock Data in case sheet is offline/private initially
+    const SAMPLE_RECORDS = [
+      { TIMESTAMP: "2026-09-26 20:30:05", EVENT_TYPE: "STARTUP", OPERATOR: "nitin", MACHINE_HWID: "6C0FD66A-3D0F-4A15-B8C7-5D3F009F9B90", IP_ADDRESS: "Pub:122.181.100.43 | Loc:192.168.1.20", OS_VERSION: "Windows-11-10.0.26200-SP0", PYTHON_VER: "3.14.0", DETAILS: "TI Studio Pro v3.4.1 Launched" },
+      { TIMESTAMP: "2026-09-26 20:30:06", EVENT_TYPE: "AUDIT_VERIFY", OPERATOR: "nitin", MACHINE_HWID: "6C0FD66A-3D0F-4A15-B8C7-5D3F009F9B90", IP_ADDRESS: "Pub:122.181.100.43 | Loc:192.168.1.20", OS_VERSION: "Windows-11-10.0.26200-SP0", PYTHON_VER: "3.14.0", DETAILS: "All 33 Audit Checks Verified" },
+      { TIMESTAMP: "2026-09-26 18:15:20", EVENT_TYPE: "AUDIT_CHECK", OPERATOR: "pawan", MACHINE_HWID: "AFD7ACAA-5752-F72C-E49E-C01850D946D5", IP_ADDRESS: "Pub:103.160.49.135 | Loc:10.49.89.216", OS_VERSION: "Windows-11-10.0.26200-SP0", PYTHON_VER: "3.12.9", DETAILS: "Check 15 (Double Payment) executed: 4 flags" },
+      { TIMESTAMP: "2026-09-26 16:40:12", EVENT_TYPE: "EXPORT", OPERATOR: "pawan", MACHINE_HWID: "AFD7ACAA-5752-F72C-E49E-C01850D946D5", IP_ADDRESS: "Pub:103.160.49.135 | Loc:10.49.89.216", OS_VERSION: "Windows-11-10.0.26200-SP0", PYTHON_VER: "3.12.9", DETAILS: "Exported Full Audit Report (Excel)" },
+      { TIMESTAMP: "2026-09-26 15:10:45", EVENT_TYPE: "STARTUP", OPERATOR: "yogesh", MACHINE_HWID: "D83651BE-FF6A-5252-DB55-C01850D494DA", IP_ADDRESS: "Pub:103.160.49.132 | Loc:10.49.89.103", OS_VERSION: "Windows-10-10.0.19045-SP0", PYTHON_VER: "3.12.7", DETAILS: "TI Studio Pro v3.4.1 Launched" },
+      { TIMESTAMP: "2026-09-26 14:22:18", EVENT_TYPE: "AUDIT_CHECK", OPERATOR: "ashish", MACHINE_HWID: "5B7FB322-394D-424C-9B68-D8044E130BAA", IP_ADDRESS: "Pub:122.181.100.43 | Loc:172.18.108.110", OS_VERSION: "Windows-11-10.0.26200-SP0", PYTHON_VER: "3.12.9", DETAILS: "Check 32 (FVC Mazdoor) executed: 12 flags" },
+      { TIMESTAMP: "2026-09-25 11:05:00", EVENT_TYPE: "STARTUP", OPERATOR: "deepak", MACHINE_HWID: "B28DF200-8E69-11EC-A5E5-8877B8A17800", IP_ADDRESS: "Pub:103.160.49.135 | Loc:10.53.215.55", OS_VERSION: "Windows-10-10.0.19045-SP0", PYTHON_VER: "3.12.7", DETAILS: "TI Studio Pro v3.4.1 Launched" },
+      { TIMESTAMP: "2026-09-25 10:30:15", EVENT_TYPE: "EXPORT", OPERATOR: "deepak", MACHINE_HWID: "B28DF200-8E69-11EC-A5E5-8877B8A17800", IP_ADDRESS: "Pub:103.160.49.135 | Loc:10.53.215.55", OS_VERSION: "Windows-10-10.0.19045-SP0", PYTHON_VER: "3.12.7", DETAILS: "Exported Omni Dossier to Excel" }
+    ];
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initDropdownState();
+      loadTelemetryData();
+      startCountdownTimer();
+    });
+
+    function initDropdownState() {
+      const select = document.getElementById('sheet-select');
+      if (_currentSheetId === SHEET_CONFIGS.ti_studio.id) {
+        select.value = 'ti_studio';
+      } else if (_currentSheetId === SHEET_CONFIGS.ifmis_365.id) {
+        select.value = 'ifmis_365';
+      } else {
+        select.value = 'custom';
+      }
+    }
+
+    function handleSheetChange(val) {
+      if (val === 'ti_studio') {
+        _currentSheetId = SHEET_CONFIGS.ti_studio.id;
+        _currentSheetGid = SHEET_CONFIGS.ti_studio.gid;
+      } else if (val === 'ifmis_365') {
+        _currentSheetId = SHEET_CONFIGS.ifmis_365.id;
+        _currentSheetGid = SHEET_CONFIGS.ifmis_365.gid;
+      } else if (val === 'custom') {
+        openSettingsModal();
+        return;
+      }
+      localStorage.setItem('tistudio_sheet_id', _currentSheetId);
+      localStorage.setItem('tistudio_sheet_gid', _currentSheetGid);
+      loadTelemetryData(true);
+    }
+
+    async function loadTelemetryData(force = false) {
+      const btn = document.getElementById('btn-refresh');
+      if (btn) btn.classList.add('loading');
+
+      const url = `https://docs.google.com/spreadsheets/d/${_currentSheetId}/gviz/tq?tqx=out:csv&gid=${_currentSheetGid}`;
+
+      try {
+        const resp = await fetch(url, { cache: force ? 'no-cache' : 'default' });
+        if (!resp.ok) {
+          throw new Error(`HTTP ${resp.status}`);
+        }
+        const text = await resp.text();
+        document.getElementById('sharing-notice').style.display = 'none';
+
+        Papa.parse(text, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => {
+            if (results.data && results.data.length > 0) {
+              _telemetryData = normalizeRows(results.data);
+              localStorage.setItem('tistudio_telemetry_cache', JSON.stringify(_telemetryData));
+              renderDashboard();
+            } else {
+              useCachedOrSampleData();
+            }
+          }
+        });
+      } catch (err) {
+        console.warn("Direct Google Sheet fetch failed (likely private sheet):", err);
+        document.getElementById('sharing-notice').style.display = 'flex';
+        useCachedOrSampleData();
+      } finally {
+        if (btn) btn.classList.remove('loading');
+        resetCountdown();
+      }
+    }
+
+    function useCachedOrSampleData() {
+      const cached = localStorage.getItem('tistudio_telemetry_cache');
+      if (cached) {
+        try {
+          _telemetryData = JSON.parse(cached);
+        } catch(e) {
+          _telemetryData = SAMPLE_RECORDS;
+        }
+      } else {
+        _telemetryData = SAMPLE_RECORDS;
+      }
+      renderDashboard();
+    }
+
+    function normalizeRows(rows) {
+      return rows.map(r => ({
+        TIMESTAMP: r.TIMESTAMP || r.Timestamp || r.timestamp || '',
+        EVENT_TYPE: r.EVENT_TYPE || r['Event Type'] || r.event_type || 'UNKNOWN',
+        OPERATOR: r.OPERATOR || r.Operator || r.operator || 'Auditor',
+        PC_NAME: r['PC Name'] || r.PC_NAME || r.pc_name || '',
+        MACHINE_HWID: r.MACHINE_HWID || r.HWID || r.hwid || '',
+        IP_ADDRESS: r.IP_ADDRESS || r['IP Address'] || r.ip || '',
+        OS_VERSION: r.OS_VERSION || r.OS || r.os || 'Windows',
+        PYTHON_VER: r.PYTHON_VER || r['Python Version'] || r.python_version || '',
+        TOOL_VERSION: r['Tool Version'] || r.TOOL_VERSION || '',
+        DETAILS: r.DETAILS || r.Details || r.Mode || ''
+      })).filter(r => r.TIMESTAMP || r.MACHINE_HWID);
+    }
+
+    function renderDashboard() {
+      updateKPIs();
+      renderTimelineChart();
+      renderEventTypesChart();
+      renderHwidLoadChart();
+      renderOperatorChart();
+      renderEnvironmentChart();
+      renderWorkstationsTable();
+      applyLogFilter();
+    }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       KPI Metrics
+       ════════════════════════════════════════════════════════════════════════ */
+    function updateKPIs() {
+      const total = _telemetryData.length;
+      document.getElementById('kpi-total-events').textContent = total.toLocaleString();
+
+      const uniqueHwids = new Set(_telemetryData.map(r => r.MACHINE_HWID).filter(Boolean));
+      document.getElementById('kpi-total-hwid').textContent = uniqueHwids.size;
+
+      const uniqueOperators = new Set(_telemetryData.map(r => r.OPERATOR).filter(Boolean));
+      document.getElementById('kpi-total-operators').textContent = uniqueOperators.size;
+
+      const auditChecks = _telemetryData.filter(r => (r.EVENT_TYPE || '').includes('AUDIT')).length;
+      document.getElementById('kpi-total-audits').textContent = auditChecks;
+
+      const exports = _telemetryData.filter(r => (r.EVENT_TYPE || '').includes('EXPORT')).length;
+      document.getElementById('kpi-total-exports').textContent = exports;
+
+      // Today's events
+      const today = new Date().toISOString().slice(0, 10);
+      const todayCount = _telemetryData.filter(r => (r.TIMESTAMP || '').startsWith(today)).length;
+      document.getElementById('kpi-events-today').textContent = todayCount;
+    }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       Charts (Chart.js)
+       ════════════════════════════════════════════════════════════════════════ */
+    function renderTimelineChart() {
+      const ctx = document.getElementById('chart-timeline');
+      if (!ctx) return;
+
+      // Group by Date
+      const dateCounts = {};
+      _telemetryData.forEach(r => {
+        const d = (r.TIMESTAMP || '').slice(0, 10);
+        if (d) dateCounts[d] = (dateCounts[d] || 0) + 1;
+      });
+
+      const labels = Object.keys(dateCounts).sort();
+      const data = labels.map(l => dateCounts[l]);
+
+      if (_chartTimeline) _chartTimeline.destroy();
+
+      _chartTimeline = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels.length ? labels : ['No Data'],
+          datasets: [{
+            label: 'Events Pinged',
+            data: data.length ? data : [0],
+            borderColor: '#38bdf8',
+            backgroundColor: 'rgba(56, 189, 248, 0.12)',
+            fill: true,
+            tension: 0.35,
+            pointBackgroundColor: '#38bdf8',
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } },
+            y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8', precision: 0 }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    function renderEventTypesChart() {
+      const ctx = document.getElementById('chart-event-types');
+      if (!ctx) return;
+
+      const typeCounts = {};
+      _telemetryData.forEach(r => {
+        const t = r.EVENT_TYPE || 'OTHER';
+        typeCounts[t] = (typeCounts[t] || 0) + 1;
+      });
+
+      const labels = Object.keys(typeCounts);
+      const data = labels.map(l => typeCounts[l]);
+
+      const colors = ['#38bdf8', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#ef4444'];
+
+      if (_chartEventTypes) _chartEventTypes.destroy();
+
+      _chartEventTypes = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: colors.slice(0, labels.length),
+            borderColor: '#0f172a',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'right', labels: { color: '#cbd5e1', font: { size: 11 } } }
+          }
+        }
+      });
+    }
+
+    function renderHwidLoadChart() {
+      const ctx = document.getElementById('chart-hwid-load');
+      if (!ctx) return;
+
+      const hwidCounts = {};
+      _telemetryData.forEach(r => {
+        const h = r.MACHINE_HWID ? (r.MACHINE_HWID.slice(0, 8) + '…') : 'Unknown';
+        hwidCounts[h] = (hwidCounts[h] || 0) + 1;
+      });
+
+      const sorted = Object.entries(hwidCounts).sort((a,b) => b[1] - a[1]).slice(0, 6);
+      const labels = sorted.map(s => s[0]);
+      const data = sorted.map(s => s[1]);
+
+      if (_chartHwidLoad) _chartHwidLoad.destroy();
+
+      _chartHwidLoad = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Pings by Machine',
+            data: data,
+            backgroundColor: 'rgba(14, 165, 233, 0.7)',
+            borderColor: '#38bdf8',
+            borderWidth: 1,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8', precision: 0 }, beginAtZero: true },
+            y: { grid: { display: false }, ticks: { color: '#94a3b8', font: { family: 'monospace' } } }
+          }
+        }
+      });
+    }
+
+    function renderOperatorChart() {
+      const ctx = document.getElementById('chart-operators');
+      if (!ctx) return;
+
+      const opCounts = {};
+      _telemetryData.forEach(r => {
+        const op = r.OPERATOR || 'Unknown';
+        opCounts[op] = (opCounts[op] || 0) + 1;
+      });
+
+      const sorted = Object.entries(opCounts).sort((a,b) => b[1] - a[1]).slice(0, 6);
+      const labels = sorted.map(s => s[0]);
+      const data = sorted.map(s => s[1]);
+
+      if (_chartOperators) _chartOperators.destroy();
+
+      _chartOperators = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Events Triggered',
+            data: data,
+            backgroundColor: 'rgba(99, 102, 241, 0.7)',
+            borderColor: '#818cf8',
+            borderWidth: 1,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+            y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8', precision: 0 }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    function renderEnvironmentChart() {
+      const ctx = document.getElementById('chart-environment');
+      if (!ctx) return;
+
+      const osCounts = {};
+      _telemetryData.forEach(r => {
+        let os = r.OS_VERSION || 'Windows';
+        if (os.includes('Windows-11') || os.includes('Windows 11')) os = 'Windows 11';
+        else if (os.includes('Windows-10') || os.includes('Windows 10')) os = 'Windows 10';
+        osCounts[os] = (osCounts[os] || 0) + 1;
+      });
+
+      const labels = Object.keys(osCounts);
+      const data = labels.map(l => osCounts[l]);
+
+      if (_chartEnvironment) _chartEnvironment.destroy();
+
+      _chartEnvironment = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899'],
+            borderColor: '#0f172a',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'right', labels: { color: '#cbd5e1', font: { size: 11 } } }
+          }
+        }
+      });
+    }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       Workstations Table (HWID Management)
+       ════════════════════════════════════════════════════════════════════════ */
+    function renderWorkstationsTable() {
+      const tbody = document.getElementById('hwid-table-body');
+      if (!tbody) return;
+
+      const map = new Map();
+      _telemetryData.forEach(r => {
+        const hwid = r.MACHINE_HWID;
+        if (!hwid) return;
+        if (!map.has(hwid)) {
+          map.set(hwid, {
+            hwid: hwid,
+            operator: r.OPERATOR,
+            pcName: r.PC_NAME,
+            ip: r.IP_ADDRESS,
+            os: r.OS_VERSION,
+            python: r.PYTHON_VER,
+            count: 1,
+            lastSeen: r.TIMESTAMP
+          });
+        } else {
+          const entry = map.get(hwid);
+          entry.count++;
+          if (r.TIMESTAMP > entry.lastSeen) {
+            entry.lastSeen = r.TIMESTAMP;
+            entry.operator = r.OPERATOR;
+            if (r.PC_NAME) entry.pcName = r.PC_NAME;
+            entry.ip = r.IP_ADDRESS;
+          }
+        }
+      });
+
+      if (map.size === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 40px; color: var(--text-muted);">No workstation records detected.</td></tr>`;
+        return;
+      }
+
+      let html = '';
+      Array.from(map.values()).sort((a,b) => b.lastSeen.localeCompare(a.lastSeen)).forEach(item => {
+        html += `
+          <tr>
+            <td class="mono" style="color: #38bdf8; font-weight:600;">${item.hwid}</td>
+            <td>
+              <strong>${escapeHtml(item.operator)}</strong>
+              ${item.pcName ? `<br><span style="font-size:0.75rem; color:#a78bfa;">💻 ${escapeHtml(item.pcName)}</span>` : ''}
+            </td>
+            <td class="mono" style="font-size:0.75rem; color: var(--text-secondary);">${escapeHtml(item.ip)}</td>
+            <td>${escapeHtml(item.os)}</td>
+            <td><span class="badge" style="background: rgba(148,163,184,0.15); color:#cbd5e1;">Python ${escapeHtml(item.python || '3.14')}</span></td>
+            <td style="font-weight:700;">${item.count}</td>
+            <td style="color: var(--text-muted); font-size: 0.8rem;">${item.lastSeen}</td>
+            <td>
+              <button class="btn btn-sm" onclick="copyHWID('${item.hwid}')" style="padding: 3px 8px; font-size: 0.75rem;">
+                📋 Copy HWID
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function copyHWID(hwid) {
+      navigator.clipboard.writeText(hwid);
+      alert(`Hardware ID copied to clipboard:\n\n${hwid}\n\nYou can now paste this into your GitHub Gist "blocked_hardware_ids" array to lock out this machine.`);
+    }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       Log Table & Filtering
+       ════════════════════════════════════════════════════════════════════════ */
+    function applyLogFilter() {
+      const q = (document.getElementById('log-search').value || '').toLowerCase().trim();
+      const type = document.getElementById('log-type-filter').value;
+
+      _filteredLogs = _telemetryData.filter(r => {
+        if (type !== 'ALL' && r.EVENT_TYPE !== type) return false;
+        if (!q) return true;
+        const line = `${r.TIMESTAMP} ${r.EVENT_TYPE} ${r.OPERATOR} ${r.MACHINE_HWID} ${r.IP_ADDRESS} ${r.DETAILS}`.toLowerCase();
+        return line.includes(q);
+      });
+
+      _currentPage = 1;
+      renderLogTablePage();
+    }
+
+    function renderLogTablePage() {
+      const tbody = document.getElementById('log-table-body');
+      if (!tbody) return;
+
+      const total = _filteredLogs.length;
+      const start = (_currentPage - 1) * _pageSize;
+      const end = Math.min(start + _pageSize, total);
+      const pageRows = _filteredLogs.slice(start, end);
+
+      document.getElementById('pagination-info').textContent = `Showing ${total > 0 ? (start + 1) : 0} - ${end} of ${total} events`;
+      document.getElementById('btn-prev-page').disabled = (_currentPage <= 1);
+      document.getElementById('btn-next-page').disabled = (end >= total);
+
+      if (pageRows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 40px; color: var(--text-muted);">No matching telemetry logs found.</td></tr>`;
+        return;
+      }
+
+      let html = '';
+      pageRows.forEach(r => {
+        let badgeClass = 'badge-startup';
+        if (r.EVENT_TYPE.includes('AUDIT')) badgeClass = 'badge-audit';
+        else if (r.EVENT_TYPE.includes('EXPORT')) badgeClass = 'badge-export';
+        else if (r.EVENT_TYPE.includes('ERROR')) badgeClass = 'badge-error';
+
+        html += `
+          <tr>
+            <td style="color: var(--text-muted); font-size: 0.8rem;">${r.TIMESTAMP}</td>
+            <td><span class="badge ${badgeClass}">${r.EVENT_TYPE}</span></td>
+            <td><strong>${escapeHtml(r.OPERATOR)}</strong></td>
+            <td class="mono" style="color: #38bdf8;">${r.MACHINE_HWID ? (r.MACHINE_HWID.slice(0, 13) + '…') : '-'}</td>
+            <td class="mono" style="font-size:0.75rem; color: var(--text-secondary);">${escapeHtml(r.IP_ADDRESS)}</td>
+            <td>${escapeHtml(r.OS_VERSION)}</td>
+            <td><span style="font-size: 0.78rem; color: var(--text-muted);">${escapeHtml(r.PYTHON_VER)}</span></td>
+            <td style="max-width: 260px; overflow: hidden; text-overflow: ellipsis; font-size: 0.8rem; color: var(--text-secondary);">${escapeHtml(r.DETAILS)}</td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function changePage(delta) {
+      _currentPage += delta;
+      renderLogTablePage();
+    }
+
+    function exportLogsToCSV() {
+      if (!_filteredLogs || _filteredLogs.length === 0) {
+        alert("No records to export.");
+        return;
+      }
+      const csv = Papa.unparse(_filteredLogs);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `TI_Studio_Telemetry_Logs_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       Tabs Controller
+       ════════════════════════════════════════════════════════════════════════ */
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      document.getElementById('tab-overview').style.display = (tabId === 'overview' ? 'flex' : 'none');
+      document.getElementById('tab-workstations').style.display = (tabId === 'workstations' ? 'flex' : 'none');
+      document.getElementById('tab-ledger').style.display = (tabId === 'ledger' ? 'flex' : 'none');
+    }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       Auto-refresh Timer
+       ════════════════════════════════════════════════════════════════════════ */
+    function startCountdownTimer() {
+      clearInterval(_countdownTimer);
+      if (_refreshIntervalMs <= 0) {
+        document.getElementById('refresh-countdown').textContent = 'Auto: OFF';
+        return;
+      }
+      _countdownSec = _refreshIntervalMs / 1000;
+      _countdownTimer = setInterval(() => {
+        _countdownSec--;
+        if (_countdownSec <= 0) {
+          loadTelemetryData();
+          _countdownSec = _refreshIntervalMs / 1000;
+        }
+        document.getElementById('refresh-countdown').textContent = `Auto: ${_countdownSec}s`;
+      }, 1000);
+    }
+
+    function resetCountdown() {
+      _countdownSec = _refreshIntervalMs / 1000;
+    }
+
+    function toggleAutoRefresh() {
+      if (_refreshIntervalMs > 0) {
+        _refreshIntervalMs = 0;
+      } else {
+        _refreshIntervalMs = 30000;
+      }
+      localStorage.setItem('tistudio_refresh_interval', _refreshIntervalMs);
+      startCountdownTimer();
+    }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       Settings Modal
+       ════════════════════════════════════════════════════════════════════════ */
+    function openSettingsModal() {
+      document.getElementById('setting-sheet-id').value = _currentSheetId;
+      document.getElementById('setting-sheet-gid').value = _currentSheetGid;
+      document.getElementById('setting-refresh-rate').value = _refreshIntervalMs;
+      document.getElementById('settings-modal').style.display = 'flex';
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settings-modal').style.display = 'none';
+    }
+
+    function saveSettings() {
+      _currentSheetId = document.getElementById('setting-sheet-id').value.trim();
+      _currentSheetGid = document.getElementById('setting-sheet-gid').value.trim() || '0';
+      _refreshIntervalMs = parseInt(document.getElementById('setting-refresh-rate').value);
+
+      localStorage.setItem('tistudio_sheet_id', _currentSheetId);
+      localStorage.setItem('tistudio_sheet_gid', _currentSheetGid);
+      localStorage.setItem('tistudio_refresh_interval', _refreshIntervalMs);
+
+      closeSettingsModal();
+      initDropdownState();
+      startCountdownTimer();
+      loadTelemetryData(true);
+    }
+
+    function showSharingGuide() {
+      alert("HOW TO ENABLE PUBLIC LIVE SYNC:\n\n1. Open your Google Sheet in your browser.\n2. Click the 'Share' button in the top right corner.\n3. Under 'General access', change 'Restricted' to 'Anyone with the link'.\n4. Ensure role is set to 'Viewer'.\n5. Click 'Done'.\n\nOnce done, click 'Refresh Now' on this dashboard to stream live telemetry instantly!");
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
