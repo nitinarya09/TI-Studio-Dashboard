@@ -23,38 +23,38 @@
     }
 
     html.dark {
-      --bg-base: #070b14;
-      --bg-surface: #0f172a;
-      --bg-card: #182236;
-      --bg-card-hover: #1e2c44;
-      --bg-elevated: #1e293b;
-      --border-color: #24344d;
-      --border-subtle: rgba(255, 255, 255, 0.08);
+      --bg-base: #070a12;
+      --bg-surface: #0d1424;
+      --bg-card: #111b2e;
+      --bg-card-hover: #16233b;
+      --bg-elevated: #1a2842;
+      --border-color: rgba(148, 163, 184, 0.14);
+      --border-subtle: rgba(255, 255, 255, 0.06);
       --border-highlight: #38bdf8;
       --text-primary: #f8fafc;
       --text-secondary: #94a3b8;
       --text-muted: #64748b;
-      --header-bg: rgba(15, 23, 42, 0.88);
-      --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+      --header-bg: rgba(13, 20, 36, 0.85);
+      --card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 4px 12px -2px rgba(0, 0, 0, 0.4);
       --glow-blue: rgba(56, 189, 248, 0.15);
       --table-stripe: rgba(255, 255, 255, 0.02);
       --table-hover: rgba(56, 189, 248, 0.07);
     }
 
     html.light {
-      --bg-base: #f1f5f9;
+      --bg-base: #f8fafc;
       --bg-surface: #ffffff;
       --bg-card: #ffffff;
-      --bg-card-hover: #f8fafc;
-      --bg-elevated: #f1f5f9;
-      --border-color: #cbd5e1;
-      --border-subtle: rgba(0, 0, 0, 0.06);
+      --bg-card-hover: #f1f5f9;
+      --bg-elevated: #f8fafc;
+      --border-color: #e2e8f0;
+      --border-subtle: rgba(0, 0, 0, 0.05);
       --border-highlight: #0284c7;
       --text-primary: #0f172a;
       --text-secondary: #475569;
       --text-muted: #64748b;
-      --header-bg: rgba(255, 255, 255, 0.9);
-      --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --header-bg: rgba(255, 255, 255, 0.92);
+      --card-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
       --glow-blue: rgba(2, 132, 199, 0.1);
       --table-stripe: rgba(0, 0, 0, 0.015);
       --table-hover: rgba(2, 132, 199, 0.05);
@@ -83,6 +83,20 @@
       min-height: 100vh;
       overflow-x: hidden;
       transition: background 0.3s ease, color 0.3s ease;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1200px;
+      height: 350px;
+      background: radial-gradient(ellipse at 50% -20%, rgba(14, 165, 233, 0.14), transparent 70%);
+      pointer-events: none;
+      z-index: 0;
     }
 
     /* Scrollbars */
@@ -256,22 +270,22 @@
     }
 
     /* ════════════════════════════════════════════════════════════════════════
-       KPI SUMMARY METRIC CARDS (8-GRID)
+       EXECUTIVE KPI SUMMARY METRIC CARDS (5-TILES)
        ════════════════════════════════════════════════════════════════════════ */
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-      gap: 14px;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 16px;
     }
 
     .kpi-card {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 16px 18px;
+      border-radius: 14px;
+      padding: 18px 20px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
       position: relative;
       overflow: hidden;
       box-shadow: var(--card-shadow);
@@ -279,40 +293,62 @@
     }
 
     .kpi-card:hover {
-      transform: translateY(-2px);
+      transform: translateY(-3px);
       border-color: var(--border-highlight);
+      box-shadow: 0 14px 30px -6px rgba(0, 0, 0, 0.45), 0 0 20px var(--kpi-glow, rgba(56, 189, 248, 0.15));
     }
 
     .kpi-card::before {
       content: "";
       position: absolute;
       top: 0; left: 0; right: 0;
-      height: 3px;
+      height: 3.5px;
       background: var(--kpi-bar, linear-gradient(90deg, #38bdf8, #818cf8));
+      border-radius: 14px 14px 0 0;
     }
 
-    .kpi-title {
-      font-size: 0.74rem;
-      font-weight: 700;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
+    .kpi-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 8px;
+    }
+
+    .kpi-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.65px;
+      line-height: 1.25;
+    }
+
+    .kpi-icon-pill {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
     }
 
     .kpi-value {
-      font-size: 1.8rem;
+      font-size: 1.85rem;
       font-weight: 800;
       line-height: 1.1;
+      font-family: 'JetBrains Mono', var(--font-sans);
       font-variant-numeric: tabular-nums;
+      letter-spacing: -0.5px;
       color: var(--text-primary);
+      margin-top: 2px;
     }
 
     .kpi-subtext {
       font-size: 0.72rem;
       color: var(--text-muted);
+      line-height: 1.3;
       display: flex;
       align-items: center;
       gap: 4px;
@@ -321,24 +357,27 @@
     /* Navigation Tabs */
     .nav-tabs {
       display: flex;
-      gap: 8px;
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 10px;
+      gap: 6px;
+      background: var(--bg-surface);
+      padding: 6px;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
       overflow-x: auto;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
     }
 
     .tab-btn {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
+      background: transparent;
+      border: 1px solid transparent;
       color: var(--text-secondary);
-      padding: 7px 18px;
-      border-radius: 20px;
+      padding: 8px 18px;
+      border-radius: 10px;
       font-size: 0.82rem;
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 7px;
+      gap: 8px;
       transition: var(--transition-smooth);
       white-space: nowrap;
       user-select: none;
@@ -347,14 +386,13 @@
     .tab-btn:hover {
       color: var(--text-primary);
       background: var(--bg-card-hover);
-      border-color: var(--border-highlight);
     }
 
     .tab-btn.active {
-      background: var(--primary);
-      border-color: var(--primary);
+      background: linear-gradient(135deg, #0284c7, #2563eb);
       color: #ffffff;
-      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
     }
 
     /* Cards & Containers */
@@ -473,6 +511,7 @@
     .metric-val {
       font-size: 0.96rem;
       font-weight: 700;
+      font-family: var(--font-mono);
       color: var(--text-primary);
       margin-top: 1px;
     }
@@ -649,6 +688,13 @@
       }
     }
 
+    @media (max-width: 1200px) {
+      .kpi-grid {
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 12px;
+      }
+    }
+
     @media (max-width: 1100px) {
       .charts-grid-2 {
         grid-template-columns: 1fr;
@@ -712,10 +758,6 @@
         display: none; /* Icon-only buttons on mobile to fit top bar */
       }
 
-      .header-gist-btn {
-        display: none; /* Handled in Tab 4 on mobile */
-      }
-
       main {
         padding: 10px 10px 40px 10px;
         gap: 14px;
@@ -725,7 +767,7 @@
 
       .nav-tabs {
         gap: 6px;
-        padding-bottom: 8px;
+        padding: 4px;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
       }
@@ -745,13 +787,17 @@
       }
 
       .kpi-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, 1fr) !important;
         gap: 8px;
       }
 
+      .kpi-grid .kpi-card:last-child {
+        grid-column: 1 / -1;
+      }
+
       .kpi-card {
-        padding: 10px 12px;
-        border-radius: 10px;
+        padding: 12px 14px;
+        border-radius: 12px;
       }
 
       .kpi-title {
@@ -954,76 +1000,60 @@
       <button class="btn theme-toggle-btn" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle Dark/Light Mode">
         🌙 <span class="btn-text">Dark</span>
       </button>
-
-      <!-- Remote Kill-Switch Gist Button -->
-      <a href="https://gist.github.com/nitinarya09/1c4b00f71aaca63f51f1f6f180c8cb1c" target="_blank" class="btn btn-danger header-gist-btn" style="text-decoration:none;" title="Open Administrator GitHub Gist to Ban HWIDs or Trigger Kill-Switch">
-        🛡️ <span class="btn-text">Gist</span>
-      </a>
-
-      <!-- Settings button -->
-      <button class="btn" onclick="openSettingsModal()" title="Dashboard Settings">
-        ⚙️
-      </button>
     </div>
   </header>
 
   <main>
-    <!-- 8-Card Executive KPI Ribbon -->
+    <!-- 5-Card Executive KPI Ribbon -->
     <div class="kpi-grid">
-      <!-- KPI 1 -->
-      <div class="kpi-card" style="--kpi-bar: linear-gradient(90deg, #38bdf8, #3b82f6);">
-        <div class="kpi-title">Transactions Screened <span>📊</span></div>
+      <!-- KPI 1: Total Transactions Screened -->
+      <div class="kpi-card" style="--kpi-bar: linear-gradient(90deg, #38bdf8, #2563eb); --kpi-glow: rgba(56, 189, 248, 0.15);">
+        <div class="kpi-header">
+          <div class="kpi-title">Total Transactions Screened</div>
+          <div class="kpi-icon-pill" style="color: #38bdf8; background: rgba(56, 189, 248, 0.12);">📊</div>
+        </div>
         <div class="kpi-value" id="kpi-total-screened">0</div>
-        <div class="kpi-subtext">POL & Paybill dataset volume</div>
+        <div class="kpi-subtext">POL &amp; Paybill dataset volume</div>
       </div>
 
-      <!-- KPI 2 -->
-      <div class="kpi-card" style="--kpi-bar: linear-gradient(90deg, #ef4444, #dc2626);">
-        <div class="kpi-title">Total Flagged Amount <span>🚨</span></div>
+      <!-- KPI 2: Total Amount -->
+      <div class="kpi-card" style="--kpi-bar: linear-gradient(90deg, #10b981, #059669); --kpi-glow: rgba(16, 185, 129, 0.15);">
+        <div class="kpi-header">
+          <div class="kpi-title">Total Amount</div>
+          <div class="kpi-icon-pill" style="color: #10b981; background: rgba(16, 185, 129, 0.12);">💰</div>
+        </div>
+        <div class="kpi-value" id="kpi-total-amount" style="color: var(--emerald);">₹0.00 Cr</div>
+        <div class="kpi-subtext">Gross audited expenditure</div>
+      </div>
+
+      <!-- KPI 3: Total Flagged Cases -->
+      <div class="kpi-card" style="--kpi-bar: linear-gradient(90deg, #f59e0b, #d97706); --kpi-glow: rgba(245, 158, 11, 0.15);">
+        <div class="kpi-header">
+          <div class="kpi-title">Total Flagged Cases</div>
+          <div class="kpi-icon-pill" style="color: #f59e0b; background: rgba(245, 158, 11, 0.12);">⚠️</div>
+        </div>
+        <div class="kpi-value" id="kpi-flagged-cases" style="color: var(--amber);">0</div>
+        <div class="kpi-subtext">Irregularities detected across checks</div>
+      </div>
+
+      <!-- KPI 4: Total Flagged Amount -->
+      <div class="kpi-card" style="--kpi-bar: linear-gradient(90deg, #ef4444, #dc2626); --kpi-glow: rgba(239, 68, 68, 0.15);">
+        <div class="kpi-header">
+          <div class="kpi-title">Total Flagged Amount</div>
+          <div class="kpi-icon-pill" style="color: #ef4444; background: rgba(239, 68, 68, 0.12);">🚨</div>
+        </div>
         <div class="kpi-value" id="kpi-flagged-amount" style="color: var(--rose);">₹0.00 Cr</div>
         <div class="kpi-subtext">Cumulative high audit risk</div>
       </div>
 
-      <!-- KPI 3 -->
-      <div class="kpi-card" style="--kpi-bar: linear-gradient(90deg, #f59e0b, #d97706);">
-        <div class="kpi-title">Flagged Vouchers / Cases <span>🔍</span></div>
-        <div class="kpi-value" id="kpi-flagged-cases">0</div>
-        <div class="kpi-subtext">Irregularities detected</div>
-      </div>
-
-      <!-- KPI 4 -->
-      <div class="kpi-card" style="--kpi-bar: linear-gradient(90deg, #8b5cf6, #6366f1);">
-        <div class="kpi-title">Treasuries Audited <span>🏛️</span></div>
-        <div class="kpi-value" id="kpi-treasuries-count">0</div>
+      <!-- KPI 5: Treasuries Covered -->
+      <div class="kpi-card" style="--kpi-bar: linear-gradient(90deg, #8b5cf6, #6366f1); --kpi-glow: rgba(139, 92, 246, 0.15);">
+        <div class="kpi-header">
+          <div class="kpi-title">Treasuries Covered</div>
+          <div class="kpi-icon-pill" style="color: #8b5cf6; background: rgba(139, 92, 246, 0.12);">🏛️</div>
+        </div>
+        <div class="kpi-value" id="kpi-treasuries-count" style="color: #a78bfa;">0</div>
         <div class="kpi-subtext">Districts under surveillance</div>
-      </div>
-
-      <!-- KPI 5 -->
-      <div class="kpi-card" style="--kpi-bar: linear-gradient(90deg, #10b981, #059669);">
-        <div class="kpi-title">Active Workstations <span>💻</span></div>
-        <div class="kpi-value" id="kpi-total-hwid">0</div>
-        <div class="kpi-subtext">Unique HWID machines monitored</div>
-      </div>
-
-      <!-- KPI 6 -->
-      <div class="kpi-card" style="--kpi-bar: linear-gradient(90deg, #06b6d4, #0891b2);">
-        <div class="kpi-title">Active Operators <span>👤</span></div>
-        <div class="kpi-value" id="kpi-total-operators">0</div>
-        <div class="kpi-subtext">Auditors & Analysts</div>
-      </div>
-
-      <!-- KPI 7 -->
-      <div class="kpi-card" style="--kpi-bar: linear-gradient(90deg, #ec4899, #db2777);">
-        <div class="kpi-title">Audit Check Runs <span>⚡</span></div>
-        <div class="kpi-value" id="kpi-total-runs">0</div>
-        <div class="kpi-subtext">Execution pings recorded</div>
-      </div>
-
-      <!-- KPI 8 -->
-      <div class="kpi-card" style="--kpi-bar: linear-gradient(90deg, #10b981, #14b8a6);">
-        <div class="kpi-title">Kill-Switch Status <span>🛡️</span></div>
-        <div class="kpi-value" id="kpi-security-status" style="color: var(--emerald); font-size: 1.4rem;">Enforced</div>
-        <div class="kpi-subtext">Hardware ID locking active</div>
       </div>
     </div>
 
@@ -2020,36 +2050,49 @@
     function updateKPIRibbon() {
       // 1. Transactions screened (sum of treasuries)
       const totalScreened = TREASURIES_DATA.reduce((acc, t) => acc + t.totalRows, 0);
-      document.getElementById('kpi-total-screened').textContent = totalScreened.toLocaleString('en-IN');
+      const elScreened = document.getElementById('kpi-total-screened');
+      if (elScreened) elScreened.textContent = totalScreened.toLocaleString('en-IN');
+
+      // 2. Total Amount (Gross Audited Expenditure)
+      const totalAmtCr = TREASURIES_DATA.reduce((acc, t) => acc + (t.totalAmtCr || 0), 0);
+      const elTotalAmt = document.getElementById('kpi-total-amount');
+      if (elTotalAmt) elTotalAmt.textContent = `₹${totalAmtCr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Cr`;
+
+      // 3. Flagged Cases
+      const totalFlaggedCases = ALL_33_CHECKS.reduce((acc, c) => acc + c.cases, 0);
+      const elCases = document.getElementById('kpi-flagged-cases');
+      if (elCases) elCases.textContent = totalFlaggedCases.toLocaleString('en-IN');
+
+      // 4. Flagged Amount
+      const totalFlaggedCr = ALL_33_CHECKS.reduce((acc, c) => acc + (c.amtLakhs / 100), 0);
+      const elFlaggedAmt = document.getElementById('kpi-flagged-amount');
+      if (elFlaggedAmt) elFlaggedAmt.textContent = `₹${totalFlaggedCr.toFixed(2)} Cr`;
+
+      // 5. Treasuries Count / Covered
+      const elTreasuries = document.getElementById('kpi-treasuries-count');
+      if (elTreasuries) elTreasuries.textContent = TREASURIES_DATA.length;
 
       // Update Districts Screened badge
       const bStatus = document.getElementById('badge-treasury-status');
       if (bStatus) bStatus.textContent = `${TREASURIES_DATA.length} Districts Screened`;
 
-      // 2. Flagged Amount
-      const totalFlaggedCr = ALL_33_CHECKS.reduce((acc, c) => acc + (c.amtLakhs / 100), 0);
-      document.getElementById('kpi-flagged-amount').textContent = `₹${totalFlaggedCr.toFixed(2)} Cr`;
-
-      // 3. Flagged Cases
-      const totalFlaggedCases = ALL_33_CHECKS.reduce((acc, c) => acc + c.cases, 0);
-      document.getElementById('kpi-flagged-cases').textContent = totalFlaggedCases.toLocaleString('en-IN');
-
-      // 4. Treasuries Count
-      document.getElementById('kpi-treasuries-count').textContent = TREASURIES_DATA.length;
-
-      // 5. Active HWIDs (from live stream + batch runs)
-      const hwids = new Set(_telemetryData.map(r => r.MACHINE_HWID).filter(Boolean));
-      if (hwids.size === 0) hwids.add("6C0FD66A-3D0F-4A15-B8C7-5D3F009F9B90");
-      document.getElementById('kpi-total-hwid').textContent = hwids.size;
-
-      // 6. Active Operators
-      const operators = new Set(_telemetryData.map(r => r.OPERATOR).filter(Boolean));
-      if (operators.size === 0) operators.add("Nitin");
-      document.getElementById('kpi-total-operators').textContent = operators.size;
-
-      // 7. Check Runs
-      const totalRuns = _telemetryData.length + BATCH_RUNS_DATA.length;
-      document.getElementById('kpi-total-runs').textContent = totalRuns;
+      // Optional legacy metrics (if DOM element present)
+      const elHwid = document.getElementById('kpi-total-hwid');
+      if (elHwid) {
+        const hwids = new Set(_telemetryData.map(r => r.MACHINE_HWID).filter(Boolean));
+        if (hwids.size === 0) hwids.add("6C0FD66A-3D0F-4A15-B8C7-5D3F009F9B90");
+        elHwid.textContent = hwids.size;
+      }
+      const elOperators = document.getElementById('kpi-total-operators');
+      if (elOperators) {
+        const operators = new Set(_telemetryData.map(r => r.OPERATOR).filter(Boolean));
+        if (operators.size === 0) operators.add("Nitin");
+        elOperators.textContent = operators.size;
+      }
+      const elRuns = document.getElementById('kpi-total-runs');
+      if (elRuns) {
+        elRuns.textContent = _telemetryData.length + BATCH_RUNS_DATA.length;
+      }
     }
 
     function renderTreasuryCards() {
